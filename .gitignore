@@ -12,3 +12,13 @@
 
 # Logs
 *.log
+
+# Dependencies and build artifacts
+node_modules/
+__pycache__/
+*.pyc
+.env
+bin/
+obj/
+
+task.md
