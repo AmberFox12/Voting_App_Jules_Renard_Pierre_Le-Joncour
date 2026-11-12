@@ -27,7 +27,11 @@ namespace Worker
 
                 string redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
                 string redisPort = Environment.GetEnvironmentVariable("REDIS_PORT") ?? "6379";
-
+                
+                if (args.Length > 0 && args[0] == "--healthcheck")
+                {
+                    return HealthCheck(connectionString, redisHost, redisPort);
+                }
 
                 var pgsql = OpenDbConnection(connectionString);
                 var redisConn = OpenRedisConnection(redisHost, redisPort);
@@ -172,5 +176,24 @@ namespace Worker
             return Environment.GetEnvironmentVariable(name)
                 ?? throw new InvalidOperationException($"Missing {name} or {name}_FILE");
         }
+
+        private static int HealthCheck(string connectionString, string redisHost, string redisPort)
+        {
+            try
+            {
+                using var pg = new NpgsqlConnection(connectionString);
+                pg.Open();
+
+                var redis = ConnectionMultiplexer.Connect($"{redisHost}:{redisPort}");
+                redis.GetDatabase().Ping();
+
+                return 0;   // All good
+            }
+            catch (Exception)
+            {
+                return 1;   // Something is wrong
+            }
+        }
+
     }
 }
