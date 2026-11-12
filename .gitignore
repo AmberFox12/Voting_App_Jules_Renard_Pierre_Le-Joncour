@@ -22,6 +22,10 @@ __pycache__/
 bin/
 obj/
 
+# Secrets
+secrets/*
+!secrets/*.example
+
 task.md
 
 # Local Docker secrets
