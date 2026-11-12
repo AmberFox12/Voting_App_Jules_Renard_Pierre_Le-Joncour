@@ -1,5 +1,6 @@
 let express = require("express"),
   async = require("async"),
+  fs = require("fs"),
   pg = require("pg"),
   path = require("path"),
   cookieParser = require("cookie-parser"),
@@ -11,7 +12,32 @@ let express = require("express"),
 
 io.set("transports", ["polling"])
 
-const port = 8888
+function requiredEnv(name) {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`)
+  }
+  return value
+}
+
+const port = Number(requiredEnv("PORT"))
+const postgresPort = Number(requiredEnv("POSTGRES_PORT"))
+
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error("PORT must be a valid port number")
+}
+
+if (!Number.isInteger(postgresPort) || postgresPort < 1 || postgresPort > 65535) {
+  throw new Error("POSTGRES_PORT must be a valid port number")
+}
+
+const postgresPassword = fs
+  .readFileSync(requiredEnv("POSTGRES_PASSWORD_FILE"), "utf8")
+  .trim()
+
+if (!postgresPassword) {
+  throw new Error("The PostgreSQL password secret file is empty")
+}
 
 io.sockets.on("connection", function (socket) {
 
@@ -23,7 +49,11 @@ io.sockets.on("connection", function (socket) {
 })
 
 const pool = new pg.Pool({
-  connectionString: "postgres://postgres:postgres@localhost/postgres",
+  host: requiredEnv("POSTGRES_HOST"),
+  port: postgresPort,
+  database: requiredEnv("POSTGRES_DB"),
+  user: requiredEnv("POSTGRES_USER"),
+  password: postgresPassword,
 })
 
 async.retry(
