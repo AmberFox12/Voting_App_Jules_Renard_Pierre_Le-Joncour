@@ -66,7 +66,9 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     depends_on:
       redis:
         condition: service_healthy
@@ -107,7 +109,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - postgres_data:/var/lib/postgresql
     networks:
@@ -134,3 +138,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
