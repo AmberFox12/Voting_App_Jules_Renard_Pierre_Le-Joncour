@@ -1,5 +1,6 @@
 let express = require("express"),
   async = require("async"),
+  fs = require("fs"),
   pg = require("pg"),
   path = require("path"),
   cookieParser = require("cookie-parser"),
@@ -30,6 +31,14 @@ if (!Number.isInteger(postgresPort) || postgresPort < 1 || postgresPort > 65535)
   throw new Error("POSTGRES_PORT must be a valid port number")
 }
 
+const postgresPassword = fs
+  .readFileSync(requiredEnv("POSTGRES_PASSWORD_FILE"), "utf8")
+  .trim()
+
+if (!postgresPassword) {
+  throw new Error("The PostgreSQL password secret file is empty")
+}
+
 io.sockets.on("connection", function (socket) {
 
   socket.emit("message", {text: "Welcome!"})
@@ -44,7 +53,7 @@ const pool = new pg.Pool({
   port: postgresPort,
   database: requiredEnv("POSTGRES_DB"),
   user: requiredEnv("POSTGRES_USER"),
-  password: requiredEnv("POSTGRES_PASSWORD"),
+  password: postgresPassword,
 })
 
 async.retry(

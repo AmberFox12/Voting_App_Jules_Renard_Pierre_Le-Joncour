@@ -12,3 +12,6 @@
 
 # Logs
 *.log
+
+# Local Docker secrets
+/secrets/db_password.txt
