@@ -23,7 +23,7 @@ services:
         - CMD
         - python
         - -c
-        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)"
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"
       interval: 15s
       timeout: 5s
       retries: 3
@@ -47,6 +47,16 @@ services:
       - db_password
     ports:
       - "8888:8888"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:8888/health', r => { r.resume(); process.exitCode = r.statusCode === 200 ? 0 : 1 }).on('error', () => process.exit(1)).setTimeout(4000, function () { this.destroy() })"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       db:
         condition: service_healthy
@@ -90,7 +100,7 @@ services:
     cpus: 0.50
 
   redis:
-    image: redis:8.2.3-alpine3.22
+    image: redis:8.8.4-alpine3.23
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
