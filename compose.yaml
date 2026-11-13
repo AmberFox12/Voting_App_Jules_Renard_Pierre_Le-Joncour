@@ -27,10 +27,10 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5s
     restart: unless-stopped
-    mem_limit: 128m
-    cpus: 0.50
+    mem_limit: 96m
+    cpus: 0.1
 
   result:
     build:
@@ -56,7 +56,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 2s
     depends_on:
       db:
         condition: service_healthy
@@ -64,8 +64,8 @@ services:
       - front
       - data
     restart: unless-stopped
-    mem_limit: 256m
-    cpus: 0.50
+    mem_limit: 128m
+    cpus: 0.1
 
   worker:
     build:
@@ -94,10 +94,10 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 2s
     restart: unless-stopped
-    mem_limit: 256m
-    cpus: 0.50
+    mem_limit: 128m
+    cpus: 0.2
 
   redis:
     image: redis:8.8.4-alpine3.23
@@ -110,11 +110,11 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 10
-      start_period: 5s
+      retries: 3
+      start_period: 2s
     restart: unless-stopped
-    mem_limit: 128m
-    cpus: 0.50
+    mem_limit: 32m
+    cpus: 0.05
 
   db:
     image: postgres:18.1-alpine3.23
@@ -134,11 +134,11 @@ services:
         - 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"'
       interval: 5s
       timeout: 3s
-      retries: 10
-      start_period: 10s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: 1.0
+    mem_limit: 256m
+    cpus: 0.2
 
 networks:
   front:
