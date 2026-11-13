@@ -2,11 +2,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:11.0-alpine3.24 AS build
 WORKDIR /app
 COPY . .
-RUN dotnet publish -c Release -o /app
+RUN dotnet publish -c Release -o /build
 
 # Étape 2 : exécution, avec le runtime seul
 FROM mcr.microsoft.com/dotnet/runtime:11.0-alpine3.24
 WORKDIR /app
-COPY --from=build /app .
+COPY --from=build /build .
 USER app
 ENTRYPOINT ["dotnet", "Worker.dll"]
