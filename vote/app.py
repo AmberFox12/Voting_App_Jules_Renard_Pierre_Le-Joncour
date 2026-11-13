@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, make_response
 from redis import Redis
+from redis.exceptions import RedisError
 import os
 import socket
 import random
@@ -20,6 +21,15 @@ def get_redis():
     if not hasattr(Flask, 'redis'):
         Flask.redis = Redis(host=redis_host, port=redis_port, db=0, socket_timeout=5)
     return Flask.redis
+
+@app.route("/health", methods=["GET"])
+def health():
+    try:
+        get_redis().ping()
+        return {"status": "ok"}, 200
+    except RedisError as exc:
+        app.logger.error("Redis health check failed: %s", exc)
+        return {"status": "unhealthy", "dependency": "redis"}, 503
 
 @app.route("/", methods=['POST', 'GET'])
 def hello():
