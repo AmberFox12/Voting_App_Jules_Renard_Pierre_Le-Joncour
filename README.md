@@ -70,8 +70,8 @@ Les services applicatifs sont construits depuis les Dockerfiles du projet :
 - `vote/Dockerfile` utilise l’image officielle `python:3.15.2-alpine3.24`.
 - `result/Dockerfile` utilise `node:26.13.1-alpine3.24`, installe les dépendances verrouillées avec `npm ci` et exécute le service avec l’utilisateur non privilégié `node`.
 - `worker/Dockerfile` utilise une construction multi-étapes :
-  1. l’image Microsoft .NET SDK compile et publie le worker ;
-  2. l’image Microsoft .NET Runtime exécute l’application publiée sans embarquer le SDK.
+  1. `mcr.microsoft.com/dotnet/sdk:11.0-alpine3.24` compile et publie le worker ;
+  2. `mcr.microsoft.com/dotnet/runtime:11.0-alpine3.24` exécute l’application publiée sans embarquer le SDK.
 
 Redis et PostgreSQL utilisent des images officielles référencées dans `compose.yaml` :
 
@@ -88,13 +88,29 @@ Docker Compose configure notamment :
 
 - le démarrage des services dépendants après que Redis ou PostgreSQL est déclaré sain ;
 - un redémarrage automatique avec `unless-stopped` ;
-- des limites de mémoire et de CPU pour chaque conteneur ;
+- des plafonds de mémoire et de CPU adaptés au profil de charge mesuré du projet ;
 - des healthchecks pour Redis, PostgreSQL, Vote, Résultats et Worker.
+
+### Plafonds de ressources
+
+Les limites ci-dessous sont des plafonds par conteneur, pas des ressources réservées. Leur total théorique est de 640 MiB et 0,65 CPU ; la consommation réelle dépend de la charge.
+
+| Service | Mémoire maximale | CPU maximal |
+|---|---:|---:|
+| `vote` | 96 MiB | 0,10 |
+| `result` | 128 MiB | 0,10 |
+| `worker` | 128 MiB | 0,20 |
+| `redis` | 32 MiB | 0,05 |
+| `db` | 256 MiB | 0,20 |
+
+Ces valeurs ont été ajustées à partir de mesures `docker stats` pour le profil de test du projet. Elles ne constituent pas des valeurs garanties pour une charge de production. Il est recommandé de surveiller l’utilisation sous charge représentative avec `docker stats` et de relever les plafonds si un conteneur approche régulièrement sa limite ou devient `unhealthy`.
 
 Les routes HTTP de santé contrôlent aussi les dépendances principales :
 
 - `GET /health` sur Vote vérifie Redis avec `PING`.
 - `GET /health` sur Résultats exécute `SELECT 1` sur PostgreSQL.
+
+Les healthchecks applicatifs s’exécutent toutes les 15 secondes ; Redis et PostgreSQL sont contrôlés toutes les 5 secondes. Les périodes de grâce au démarrage (`start_period`) vont de 2 à 5 secondes, avec 3 tentatives avant de déclarer un service `unhealthy`. Ces intervalles courts accélèrent la détection de l’état, mais peuvent signaler plus vite un démarrage lent ; augmente les périodes de grâce ou le nombre de tentatives si l’environnement met plus de temps à démarrer.
 
 Un état `healthy` signifie que le test associé au service réussit. Un healthcheck ne redémarre pas nécessairement un conteneur devenu malade : il permet avant tout à Docker et à l’utilisateur de constater son état. `depends_on` avec `service_healthy` contrôle l’ordre de démarrage, pas la disponibilité permanente des dépendances.
 
@@ -263,10 +279,8 @@ Vérifier également la présence de `.env` et de `secrets/db_password.txt`, ain
 │   ├── Dockerfile
 │   ├── Program.cs
 │   └── Worker.csproj
-├── secrets/
-│   └── db_password.txt.example
-└── run/
-    └── scripts de lancement manuel
+└── secrets/
+    └── db_password.txt.example
 ```
 
 ## Dépendances
@@ -277,3 +291,5 @@ Vérifier également la présence de `.env` et de `secrets/db_password.txt`, ain
 - Redis et PostgreSQL : versions d’images définies dans `compose.yaml`.
 
 Pour comprendre ou mettre à jour les versions réellement utilisées, consulter ces fichiers de configuration avant de modifier les tags.
+
+Les services applicatifs, Redis et PostgreSQL utilisent des images référencées par tags de version. Les images .NET sont publiées sur Microsoft Container Registry (MCR). Les tags rendent les versions identifiables, mais ne garantissent pas à eux seuls une image immuable ; un digest `sha256` peut être utilisé pour une reproductibilité stricte.
