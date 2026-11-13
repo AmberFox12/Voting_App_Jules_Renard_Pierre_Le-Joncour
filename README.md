@@ -242,12 +242,6 @@ docker inspect --format '{{range .State.Health.Log}}{{.ExitCode}}: {{.Output}}{{
 
 Vérifier également la présence de `.env` et de `secrets/db_password.txt`, ainsi que la cohérence du mot de passe avec le volume PostgreSQL déjà initialisé.
 
-### Le worker n’arrive pas à se connecter à PostgreSQL
-
-Le worker dépend à la fois de Redis et de PostgreSQL. Consulter ses logs et vérifier les paramètres de connexion.
-
-> **Problème connu à corriger :** dans `worker/Program.cs`, le mot de passe est lu depuis le secret, mais la chaîne de connexion utilise actuellement le texte littéral `******`. PostgreSQL refusera l’authentification du worker tant que la valeur lue n’est pas utilisée dans cette chaîne. Ne pas publier le contenu du secret dans les logs ou dans le dépôt.
-
 ## Structure du dépôt
 
 ```text
