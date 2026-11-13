@@ -112,6 +112,16 @@ app.use(function (req, res, next) {
 
 app.use(express.static(__dirname + "/views"))
 
+app.get("/health", async function (req, res) {
+  try {
+    await pool.query("SELECT 1")
+    res.status(200).json({status: "ok"})
+  } catch (err) {
+    console.error("Database health check failed:", err.message)
+    res.status(503).json({status: "unhealthy", dependency: "postgres"})
+  }
+})
+
 app.get("/", function (req, res) {
   res.sendFile(path.resolve(__dirname + "/views/index.html"))
 })
